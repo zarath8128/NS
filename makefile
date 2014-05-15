@@ -8,7 +8,7 @@ ALL=test
 
 all:${ALL} 
 clean:
-	rm -rf ${ALL} *.o *.out *.gcda
+	rm -rf ${ALL} *.o *.out *.gcda *.profile *.optimized
 syntax:
 	@${MAKE} FLAGS="-fsyntax-only"
 debug:
@@ -16,14 +16,24 @@ debug:
 release:
 	@${MAKE} FLAGS="-DNDEBUG" OPT_FLAGS="-O2 -flto"
 profile:
-	@${MAKE} FLAGS="-pg"
+	@${MAKE} ${foreach target, ${ALL}, ${target}.profile}
 optimize:
-	@${MAKE} ${foreach target, ${ALL}, ${target}.optimize}
+	@${MAKE} ${foreach target, ${ALL}, ${target}.optimized}
 
 reset:
 	reset && ${MAKE} -B
 
-test:Index.h Grid.h
+%.profile:%.cpp
+	@${MAKE} FLAGS="-pg -DNDEBUG" -B
+	@./${*F} >& /dev/null
+	@gprof ./${*F} > $@
+	@rm -f ${*F} gmon.out
+
+%.profile:%.c
+	@${MAKE} FLAGS="-pg" -B
+	@./${*F} >& /dev/null
+	@gprof ./${*F} > $@
+	@rm -f ${*F} gmon.out
 
 %.optimize:%.cpp
 	@${MAKE} FLAGS="-fprofile-generate" 
@@ -31,8 +41,12 @@ test:Index.h Grid.h
 	@${MAKE} FLAGS="-fprofile-use" -B
 	@rm -f ${*F}.gcda
 
-%.optimize:%.c
+%.optimized:%.c
 	@${MAKE} FLAGS="-fprofile-generate" 
 	@./${*F}
 	@${MAKE} FLAGS="-fprofile-use" -B
 	@rm -f ${*F}.gcda
+	@mv ${*F} $@
+
+test:Index.h Grid.h Iterator.h
+

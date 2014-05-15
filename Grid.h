@@ -2,83 +2,64 @@
 #define ZARATH_NS_GRID_H
 
 #include <ZNAC/LA/Vector.h>
+#include "Iterator.h"
 
 namespace NS
 {
-	class Grid
+	struct Grid
 		:public ZNAC::LA::Vector<double>
 	{
-		unsigned int n(int xi, int yi) const {return (yi + margin)*NX + xi + margin;}
-
-		public:
-		class Accessor
-		{
-		public:
-			int xi, yi;
-
-			Accessor(int xi, int yi, Grid &g):xi(xi), yi(yi), g(g){}
-
-			double &operator=(const double &val){assert(g.n(xi, yi) < g.N()); return g[g.n(xi, yi)] = val;}
-			double &operator()(int dxi, int dyi){assert(g.n(xi + dxi, yi + dyi) < g.N()); return g[g.n(xi + dxi, yi + dyi)];}
-			operator double &(){assert(g.n(xi, yi) < g.N()); return g[g.n(xi, yi)];}
-
-		private:
-			Grid &g;
-		};
-
-		class Iterator
-		{
-		public:
-			Iterator(int xi, int yi, Grid &g):xi(xi), yi(yi), g(g){}
-			Accessor operator*(){return Accessor(xi, yi, g);}
-			bool operator!=(const Iterator &i)const {return xi != i.xi || yi != i.yi;}
-			virtual void operator++() const  = 0;
-
-		protected:
-			mutable int xi, yi;
-			Grid &g;
-		};
-
-		class GlobalIterator
-			:public Iterator
-		{
-		public:
-			GlobalIterator(int xi, int yi, Grid &g):Iterator(xi, yi, g){}
-			void operator++() const {if(++xi == (int)(g.NX - g.margin))xi = -g.margin, ++yi;}
-		};
-
-		const struct Global
+		struct Global
 		{
 			constexpr Global(Grid &g):g(g){}
-			GlobalIterator begin()const{return GlobalIterator(-g.margin, -g.margin, g);}
-			GlobalIterator end()const{return GlobalIterator(-g.margin, g.NY - g.margin, g);}
+			constexpr GlobalIterator<double> begin()const{return GlobalIterator<double>::begin(g.Nx, g.Ny, g.margin, g);}
+			constexpr GlobalIterator<double> end()const{return GlobalIterator<double>::end(g.Nx, g.Ny, g.margin, g);}
 		private:
 			Grid &g;
-		}global;
-
-		class CoreIterator
-			:public Iterator
-		{
-		public:
-			CoreIterator(int xi, int yi, Grid &g):Iterator(xi, yi, g){}
-			void operator++() const {if(++xi == (int)g.Nx) xi = 0, ++yi;}
 		};
-
-		const struct Core
+		struct Core
 		{
 			constexpr Core(Grid &g):g(g){}
-			CoreIterator begin() const {return CoreIterator(0, 0, g);}
-			CoreIterator end() const {return CoreIterator(0, g.Ny, g);}
+			constexpr CoreIterator<double> begin() const {return CoreIterator<double>::begin(g.Nx, g.Ny, g.margin, g);}
+			constexpr CoreIterator<double> end() const {return CoreIterator<double>::end(g.Nx, g.Ny, g.margin, g);}
 		private:
 			Grid &g;
-		}core;
-
+		};
+		struct Boundary
+		{
+			constexpr Boundary(Grid &g):g(g){}
+			constexpr BoundaryIterator<double> begin() const {return BoundaryIterator<double>::begin(g.Nx, g.Ny, g.margin, g);}
+			constexpr BoundaryIterator<double> end() const {return BoundaryIterator<double>::end(g.Nx, g.Ny, g.margin, g);}
+		private:
+			Grid &g;
+		};
+		struct Area
+		{
+			constexpr Area(AreaIndex axi, AreaIndex ayi, Grid &g):axi(axi), ayi(ayi), g(g){}
+			constexpr AreaIterator<double> begin() const {return AreaIterator<double>::begin(g.Nx, g.Ny, g.margin, g, axi, ayi);}
+			constexpr AreaIterator<double> end() const {return AreaIterator<double>::end(g.Nx, g.Ny, g.margin, g, axi, ayi);}
+		private:
+			const AreaIndex axi, ayi;
+			Grid &g;
+		};
+		struct AreaFactory
+		{
+			constexpr AreaFactory(Grid &g):g(g){}
+			constexpr Area operator()(AreaIndex axi, AreaIndex ayi){return Area(axi, ayi, g);}
+		private:
+			Grid &g;
+		};
 	public:
 		const unsigned int NX, NY, Nx, Ny, margin;
+		const Global global;
+		const Core core;
+		const Boundary boundary;
+		const AreaFactory area;
 
 		template<class INIT>
 		Grid(unsigned int Nx, unsigned int Ny, unsigned int margin, const INIT &init)
-			:Vector<double>((Nx + 2*margin)*(Ny + 2*margin)), global(*this), core(*this), NX(Nx + 2*margin), NY(Ny + 2*margin), Nx(Nx), Ny(Ny), margin(margin)
+			:Vector<double>((Nx + 2*margin)*(Ny + 2*margin)), NX(Nx + 2*margin), NY(Ny + 2*margin), Nx(Nx), Ny(Ny), margin(margin), 
+			global(*this), core(*this), boundary(*this), area(*this)
 		{
 			for(auto i:global)
 				init(i);
