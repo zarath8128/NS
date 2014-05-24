@@ -1,10 +1,10 @@
-override OPT_FLAGS+=
+override OPT_FLAGS+=-march=native
 override FLAGS += -Wall -Wextra ${OPT_FLAGS}
 override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y
 ALL=test
 
-.PHONY:all clean syntax debug release profile optimize reset
+.PHONY:all clean syntax debug release profile optimize full reset
 
 all:${ALL} 
 clean:
@@ -19,6 +19,7 @@ profile:
 	@${MAKE} ${foreach target, ${ALL}, ${target}.profile}
 optimize:
 	@${MAKE} ${foreach target, ${ALL}, ${target}.optimized}
+full:profile optimize ${ALL}
 
 reset:
 	reset && ${MAKE} -B
@@ -35,18 +36,18 @@ reset:
 	@gprof ./${*F} > $@
 	@rm -f ${*F} gmon.out
 
-%.optimize:%.cpp
+%.optimized:%.cpp
 	@${MAKE} FLAGS="-fprofile-generate" 
-	@./${*F}
-	@${MAKE} FLAGS="-fprofile-use" -B
-	@rm -f ${*F}.gcda
-
-%.optimized:%.c
-	@${MAKE} FLAGS="-fprofile-generate" 
-	@./${*F}
+	@./${*F} >& /dev/null
 	@${MAKE} FLAGS="-fprofile-use" -B
 	@rm -f ${*F}.gcda
 	@mv ${*F} $@
 
-test:Index.h Grid.h Iterator.h
+%.optimized:%.c
+	@${MAKE} FLAGS="-fprofile-generate" 
+	@./${*F} >& /dev/null
+	@${MAKE} FLAGS="-fprofile-use" -B
+	@rm -f ${*F}.gcda
+	@mv ${*F} $@
 
+test:Grid.h Iterator.h Staggered.h Diffusion.h Coordinate.h
