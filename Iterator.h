@@ -17,7 +17,7 @@ namespace NS
 
 		constexpr operator unsigned int() const {return index();}
 		constexpr unsigned int index(int dxi = 0, int dyi = 0)const{return (yi + dyi + margin)*(Nx + 2*margin) + xi + dxi + margin;}
-		constexpr unsigned int operator()(int dxi = 0, int dyi = 0)const{return (yi + dyi + margin)*(Nx + 2*margin) + xi + dxi + margin;}
+		constexpr unsigned int operator()(int dxi, int dyi)const{return index(dxi, dyi);}
 		constexpr unsigned int n(int xi, int yi)const{return (yi + margin)*(Nx + 2*margin) + xi + margin;}
 	};
 

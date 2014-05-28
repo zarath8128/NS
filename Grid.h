@@ -67,6 +67,9 @@ namespace NS
 		Grid(unsigned int Nx, unsigned int Ny, unsigned int margin)
 			:Grid(Nx, Ny, margin, [](auto &v, auto &i){v[i] = 0;}){}
 
+		double &operator()(int xi, int yi){return (*this)[n.n(xi, yi)];}
+		const double &operator()(int xi, int yi)const{return (*this)[n.n(xi, yi)];}
+
 	private:
 		Index n;
 	};

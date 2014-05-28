@@ -2,6 +2,8 @@ override OPT_FLAGS+=-march=native
 override FLAGS += -Wall -Wextra ${OPT_FLAGS}
 override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y
+
+LDLIBS=-lglsc -lX11
 ALL=test
 
 .PHONY:all clean syntax debug release profile optimize full reset
@@ -50,4 +52,5 @@ reset:
 	@rm -f ${*F}.gcda
 	@mv ${*F} $@
 
-test:Grid.h Iterator.h Staggered.h Diffusion.h Coordinate.h
+test:Grid.h Iterator.h Staggered.h Diffusion.h Coordinate.h Monitor.o Divergence.h Gradient.h
+Monitor.o:Monitor.h
