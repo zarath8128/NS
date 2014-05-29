@@ -113,7 +113,7 @@ namespace NS
 
 		void PressureContln(const Grid &p)
 		{
-			double max = 0;
+			double max = -DBL_MAX;
 			for(auto &i : p.core)
 				max = max < p[i] ? p[i] : max;
 
@@ -136,7 +136,7 @@ namespace NS
 
 		void ShowData(const Grid &u, const Grid &v, const Grid &p, double Dx, double Dy)
 		{
-			double div_max = DBL_MIN, div_min = DBL_MAX;
+			double div_max = -DBL_MAX, div_min = DBL_MAX;
 			double p_max = 0;
 			double div_ave = 0, div_all = 0;
 			for(auto &i : p.core)

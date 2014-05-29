@@ -16,7 +16,7 @@ namespace NS
 		void operator()(ZNAC::LA::IVector<double> &dom, ZNAC::LA::IVector<double> &cod)const
 		{
 			for(auto &U:Core(Nx, Ny, margin))
-				cod[U] = -Dx*(dom[U(1, 0)] + dom[U(-1, 0)]) - Dy*(dom[U(0, 1)] + dom[U(0, -1)]) + 2*(Dx + Dy)*dom[U];
+				cod[U] = Dx*(dom[U(1, 0)] + dom[U(-1, 0)]) + Dy*(dom[U(0, 1)] + dom[U(0, -1)]) - 2*(Dx + Dy)*dom[U];
 		}
 	};
 }

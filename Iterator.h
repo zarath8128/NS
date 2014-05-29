@@ -42,6 +42,15 @@ namespace NS
 		static constexpr GlobalIterator end(unsigned int Nx, unsigned int Ny, unsigned int margin){return GlobalIterator(-margin, Ny + margin, Nx, Ny, margin);}
 	};
 
+	struct Global
+	{
+		const unsigned int Nx, Ny, margin;
+		constexpr Global(unsigned int Nx, unsigned int Ny, unsigned int margin)
+			:Nx(Nx), Ny(Ny), margin(margin){}
+		constexpr GlobalIterator begin() const {return GlobalIterator::begin(Nx, Ny, margin);}
+		constexpr GlobalIterator end() const {return GlobalIterator::end(Nx, Ny, margin);}
+	};
+
 	struct CoreIterator
 		:Iterator
 	{
@@ -136,7 +145,13 @@ namespace NS
 		constexpr AreaIterator end()const{return AreaIterator::end(Nx, Ny, margin, axi, ayi);}
 	};
 
-
+	struct AreaFactory
+	{
+		const unsigned int Nx, Ny, margin;
+		constexpr AreaFactory(unsigned int Nx, unsigned int Ny, unsigned int margin)
+			:Nx(Nx), Ny(Ny), margin(margin){}
+		constexpr Area operator()(AreaIndex axi, AreaIndex ayi){return Area(Nx, Ny, margin, axi, ayi);}
+	};
 }
 
 #endif

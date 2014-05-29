@@ -4,7 +4,7 @@ override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y
 
 LDLIBS=-lglsc -lX11
-ALL=test
+ALL=test cg_test
 
 .PHONY:all clean syntax debug release profile optimize full reset
 
@@ -53,4 +53,6 @@ reset:
 	@mv ${*F} $@
 
 test:Grid.h Iterator.h Staggered.h Diffusion.h Coordinate.h Monitor.o Divergence.h Gradient.h
-Monitor.o:Monitor.h
+cg_test:Grid.h Iterator.h Staggered.h Diffusion.h Coordinate.h Monitor.o Divergence.h Gradient.h
+Monitor.o:Monitor.h Iterator.h
+
