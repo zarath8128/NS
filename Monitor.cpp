@@ -46,7 +46,6 @@ namespace NS
 		static inline void color(double &r, double &g, double &b, double val, double min, double max)
 		{
 			const double center = 0.5*(min + max);
-			const double a = 1/(3*(max - min));
 
 			if(val < center)
 			{
@@ -118,10 +117,10 @@ namespace NS
 			for(auto &i : p.core)
 				max = max < p[i] ? p[i] : max;
 
-			double P[n.Nx][n.Ny];
+			double *P = (double *)malloc(sizeof(double)*n.Nx*n.Ny);
 
 			for(auto &i : p.core)
-				P[i.xi][i.yi] = p[i];
+				P[i.xi*n.Ny + i.yi] = p[i];
 
 			double r, g, b;
 
@@ -132,6 +131,7 @@ namespace NS
 				g_line_color(g_rgb_color(r, g, b));
 				g_contln(bound.left, bound.right, bound.bottom, bound.top, (double *)P, n.Nx, n.Ny, max*i/(contln_num - 1));
 			}
+			free(P);
 		}
 
 		void ShowData(const Grid &u, const Grid &v, const Grid &p, double Dx, double Dy)
@@ -170,6 +170,9 @@ namespace NS
 			PrintWord(": %d", cg.rep);
 			PrintWord("total");
 			PrintWord(": %d", cg.n);
+			NewLine();
+			PrintWord("valid");
+			PrintWord(": %s", cg ? "success" : "fail");
 		}
 
 		void G_Text(const char *text)

@@ -17,14 +17,6 @@ namespace NS
 		private:
 			Grid &g;
 		};
-		struct Core
-		{
-			constexpr Core(Grid &g):g(g){}
-			constexpr CoreIterator begin() const {return CoreIterator::begin(g.Nx, g.Ny, g.margin);}
-			constexpr CoreIterator end() const {return CoreIterator::end(g.Nx, g.Ny, g.margin);}
-		private:
-			Grid &g;
-		};
 		struct Boundary
 		{
 			constexpr Boundary(Grid &g):g(g){}
@@ -59,7 +51,7 @@ namespace NS
 		template<class INIT>
 		Grid(unsigned int Nx, unsigned int Ny, unsigned int margin, const INIT &init)
 			:Vector((Nx + 2*margin)*(Ny + 2*margin)), NX(Nx + 2*margin), NY(Ny + 2*margin), Nx(Nx), Ny(Ny), margin(margin), 
-			global(*this), core(*this), boundary(*this), area(*this), n(0, 0, Nx, Ny, margin)
+			global(*this), core(Nx, Ny, margin), boundary(*this), area(*this), n(0, 0, Nx, Ny, margin)
 		{
 			for(auto &i:global)
 				init(*this, i);

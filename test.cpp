@@ -18,11 +18,11 @@ using namespace Monitor;
 int main()
 {
 	//Definition of values;
-	const unsigned int N = 128;
+	const unsigned int N = 32;
 	const unsigned int Nx = N;
 	const unsigned int Ny = N;
 	const unsigned int margin = 1;
-	const double Re = 400;
+	const double Re = 70;
 	const double a = 0;
 	const double b = 1;
 	const double left = -1;
@@ -35,36 +35,39 @@ int main()
 	const double height = top - bottom;
 	const double dy = height/Ny;
 	const double Dy = 1/(Re*dy*dy);
-	const double dt = 0.01;
-	const double ite_eps = 1e-16;
+	const double dt = 0.1;
+	const double ite_eps = 1e-14;
 	
 	double t = 0;
-	int Cut = 1;
+	double T = 100000;
+	int Cut = 100;
 	int count = 0;
 
-	constexpr bool EffectDiffusion = true;
-	constexpr bool EffectAdvection = true;
-	constexpr bool EffectPressure = true;
+	bool EffectDiffusion = true;
+	bool EffectAdvection = false;
+	bool EffectPressure = false;
+	bool Auto = true;
+	bool Skip = false;
 
 	Coordinate ux(-1 + dx, dx);
 	auto top_u = [&](double x){return a*(width - x)*(width + x) + b;};
 
 	Grid u(Nx - 1, Ny, margin);
-	Grid v(Nx, Ny - 1, margin);
+	Grid v(Nx, Ny, margin);
 	Grid p(Nx, Ny, margin);
 	Grid phi(Nx, Ny, margin);
 	Grid utmp(Nx - 1, Ny, margin);
 	Grid vtmp(Nx, Ny - 1, margin);
 	Grid ptmp(Nx, Ny, margin);
 	Diffusion diffusion_u(Dx, Dy, dt, Nx - 1, Ny, margin);
-	Diffusion diffusion_v(Dx, Dy, dt, Nx, Ny - 1, margin);
+	Diffusion diffusion_v(Dx, Dy, dt, Nx, Ny, margin);
 	//Diffusion diffusion_p(Dx, Dy, 0.01, Nx, Ny, margin);
 	//Laplace laplace_u(Dx, Dy, Nx - 1, Ny, margin);
 	//Laplace laplace_v(Dx, Dy, Nx, Ny - 1, margin);
 	Laplace laplace_p(1/(dx*dx), 1/(dy*dy), Nx, Ny, margin);
-	CG<double> cg_p(N, N, ite_eps);
-	CG<double> cg_u(N, N, ite_eps);
-	CG<double> cg_v(N, N, ite_eps);
+	CG<double> cg_p(5, N, ite_eps);
+	CG<double> cg_u(5, N, ite_eps);
+	CG<double> cg_v(5, N, ite_eps);
 
 	auto boundary_u = 
 		[&](auto &U)
@@ -74,27 +77,30 @@ int main()
 			for(auto &i:Area(Nx - 1, Ny, margin, AreaIndex::NEGATIVE, AreaIndex::ZERO))
 				U[i] = 0;
 			for(auto &i:Area(Nx - 1, Ny, margin, AreaIndex::ZERO, AreaIndex::POSITIVE))
-				U[i] = 2*top_u(ux(i.xi)) - U[i(0, -1)];// + 4/Dy*(top_u(ux(i.xi))*(top_u(ux(i.xi + 1)) - top_u(ux(i.xi - 1)))/(2*dx) - (top_u(ux(i.xi + 1)) + top_u(ux(i.xi - 1)) - 2*top_u(ux(i.xi)))*Dx);
+				//U[i] = 2*top_u(ux(i.xi)) - U[i(0, -1)];// + 4/Dy*(top_u(ux(i.xi))*(top_u(ux(i.xi + 1)) - top_u(ux(i.xi - 1)))/(2*dx) - (top_u(ux(i.xi + 1)) + top_u(ux(i.xi - 1)) - 2*top_u(ux(i.xi)))*Dx);
+				U[i] = 2 - U[i(0, -1)];// + 4/Dy*(top_u(ux(i.xi))*(top_u(ux(i.xi + 1)) - top_u(ux(i.xi - 1)))/(2*dx) - (top_u(ux(i.xi + 1)) + top_u(ux(i.xi - 1)) - 2*top_u(ux(i.xi)))*Dx);
 			for(auto &i:Area(Nx - 1, Ny, margin, AreaIndex::ZERO, AreaIndex::NEGATIVE))
 				U[i] = -U[i(0, 1)];
 		};
 	auto boundary_v = 
 		[&](auto &V)
 		{
-			for(auto &i:Area(Nx, Ny - 1, margin, AreaIndex::POSITIVE, AreaIndex::ZERO))
-				V[i] = - V[i(-1, 0)];
-			for(auto &i:Area(Nx, Ny - 1, margin, AreaIndex::NEGATIVE, AreaIndex::ZERO))
-				V[i] = -V[i(1, 0)];
-			for(auto &i:Area(Nx, Ny - 1, margin, AreaIndex::ZERO, AreaIndex::POSITIVE))
+			for(auto &i:Area(Nx, Ny, margin, AreaIndex::POSITIVE, AreaIndex::ZERO))
+				//V[i] = - V[i(-1, 0)];
 				V[i] = 0;
-			for(auto &i:Area(Nx, Ny - 1, margin, AreaIndex::ZERO, AreaIndex::NEGATIVE))
+			for(auto &i:Area(Nx, Ny, margin, AreaIndex::NEGATIVE, AreaIndex::ZERO))
+				//V[i] = 2 - V[i(1, 0)];
 				V[i] = 0;
+			for(auto &i:Area(Nx, Ny, margin, AreaIndex::ZERO, AreaIndex::POSITIVE))
+				V[i] = 2 - V[i(0, -1)];
+			for(auto &i:Area(Nx, Ny, margin, AreaIndex::ZERO, AreaIndex::NEGATIVE))
+				V[i] = -V[i(0, 1)];
 		};
 
 	auto boundary_p = 
 		[&](auto &P)
 		{
-			double min = DBL_MAX;
+			double min = 1e300;
 			for(auto &i : P.core)
 				min = min > P[i] ? P[i] : min;
 			for(auto &i : P.core)
@@ -122,6 +128,23 @@ int main()
 				Phi[i] = Phi[i(0, 1)];
 		};
 */
+//	for(auto &i : u.core)
+//		u[i] = i;
+
+/*	boundary_u(u);
+	boundary_v(v);
+	cg_u(diffusion_u, u, u, u.core);
+	cg_v(diffusion_v, v, v, v.core);
+	std::cout << "u" << std::endl;
+	for(auto &i : u.global)
+		std::cout << i << ":" << u[i] << std::endl;
+	std::cout << "v" << std::endl;
+	for(auto &i : v.global)
+		std::cout << i << ":" << v[i] << std::endl;
+	std::cout << "end u v" << std::endl;
+*/
+
+
 
 
 	//initialize
@@ -132,10 +155,8 @@ int main()
 
 	Initialize(250, -width, width, -width, width, Nx, Ny);
 
-	while(1)
+	while(t < T)
 	{
-		g_sleep(.15);
-
 		if(count++ % Cut == 0)
 		{
 			g_cls();
@@ -145,6 +166,7 @@ int main()
 			PressureContln(p);
 			g_line_color(G_BLACK);
 			VectorField(u, v);
+
 
 			ResetLine();
 			PrintWord("t      ");
@@ -194,6 +216,11 @@ int main()
 			NewLine();
 			ShowCG(cg_p);
 			NewLine();
+
+			if(Auto)
+				g_sleep(Skip ? 0.001 : 0.16);
+			else
+				g_sleep(-1);
 		}
 
 		if(EffectDiffusion)
