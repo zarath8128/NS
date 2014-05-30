@@ -1,10 +1,10 @@
-override OPT_FLAGS+=-march=native
+override OPT_FLAGS+=-march=native -mtune=native
 override FLAGS += -Wall -Wextra ${OPT_FLAGS}
 override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y
 
 LDLIBS=-lglsc -lX11
-ALL=test cg_test
+ALL=test 
 
 .PHONY:all clean syntax debug release profile optimize full reset
 

@@ -23,7 +23,7 @@ int main()
 	const unsigned int Nx = N;
 	const unsigned int Ny = N;
 	const unsigned int margin = 1;
-	const double Re = 10000;
+	const double Re = 5000;
 	const double a = 0;
 	const double b = 1;
 	const double left = -1;
@@ -36,23 +36,26 @@ int main()
 	const double height = top - bottom;
 	const double dy = height/Ny;
 	const double Dy = 1/(Re*dy*dy);
-	const double dt = 0.00001;
-	const double ite_eps = 1e-14;
+	const double dt = 0.001;
+	const double ite_eps = 1e-6;
 	
 	double t = 0;
-	double T = 100000000000;
-	int Cut = 100;
+	double T = 200;
+	int Cut = 0.2/dt;
 	int count = 0;
 
-	bool EffectDiffusion = true;
-	bool EffectAdvection = true;
-	bool EffectPressure = true;
+	bool All_in_One = false;
+	bool EffectDiffusion = true && !All_in_One;
+	bool ImplicitDiffusion = true;
+	bool EffectAdvection = true && !All_in_One;
+	bool EffectPressure = true && !All_in_One;
 	bool Auto = true;
 	bool Skip = false;
+	bool Capture = true;
 
 	Coordinate ux(-1 + dx, dx);
 	auto top_u = [&](double x){return a*(width - x)*(width + x) + b;};
-	//auto top_u = [&](double x){return a*cos(x*M_PI) + 1 + b;};
+//	auto top_u = [&](double x){return a*cos(x*M_PI) + 1 + b;};
 
 	Grid u(Nx - 1, Ny, margin);
 	Grid v(Nx, Ny - 1, margin);
@@ -62,12 +65,13 @@ int main()
 	Grid vtmp(Nx, Ny - 1, margin);
 	Grid ptmp(Nx, Ny, margin);
 	Diffusion diffusion_u(Dx, Dy, dt, Nx - 1, Ny, margin);
+//	Diffusion_U diffusion_u(Dx, Dy, dt, Nx - 1, Ny, margin, Parabola(a, b, left, right, Nx, margin));
 	Diffusion diffusion_v(Dx, Dy, dt, Nx, Ny - 1, margin);
 	//Diffusion diffusion_p(Dx, Dy, 0.01, Nx, Ny, margin);
-	//Laplace laplace_u(Dx, Dy, Nx - 1, Ny, margin);
-	//Laplace laplace_v(Dx, Dy, Nx, Ny - 1, margin);
-	Laplace laplace_p(-1/(dx*dx), -1/(dy*dy), Nx, Ny, margin);
-	CG<double> cg_p(15, N, ite_eps);
+	Laplace laplace_u(Dx, Dy, Nx - 1, Ny, margin);
+	Laplace laplace_v(Dx, Dy, Nx, Ny - 1, margin);
+	Laplace_d laplace_phi(-1/(dx*dx), -1/(dy*dy), Nx, Ny, margin);
+	CG<double> cg_phi(15, N, ite_eps);
 	CG<double> cg_u(15, N, ite_eps);
 	CG<double> cg_v(15, N, ite_eps);
 
@@ -108,16 +112,16 @@ int main()
 			for(auto &i : P.core)
 				P[i] -= min;
 			for(auto &i : Area(Nx, Ny, margin, AreaIndex::POSITIVE, AreaIndex::ZERO))
-				P[i] = P[i(-1, 0)] + Dx*dx*(u(i.xi - 1, i.yi) + 2.5*u(i.xi - 2, i.yi) + 2*u(i.xi - 3, i.yi) + 0.5*u(i.xi - 4, i.yi));
+				P[i] = P[i(-1, 0)] + Dx*dx*(2*u(i.xi - 1, i.yi) + 5*u(i.xi - 2, i.yi) + 4*u(i.xi - 3, i.yi) + u(i.xi - 4, i.yi));
 			for(auto &i : Area(Nx, Ny, margin, AreaIndex::NEGATIVE, AreaIndex::ZERO))
-				P[i] = P[i( 1, 0)] - Dx*dx*(u(i.xi, i.yi) - 2.5*u(i.xi + 1, i.yi) + 2*u(i.xi + 2, i.yi) - 0.5*u(i.xi + 3, i.yi));
+				P[i] = P[i( 1, 0)] - Dx*dx*(2*u(i.xi, i.yi) - 5*u(i.xi + 1, i.yi) + 4*u(i.xi + 2, i.yi) - u(i.xi + 3, i.yi));
 			for(auto &i : Area(Nx, Ny, margin, AreaIndex::ZERO, AreaIndex::POSITIVE))
-				P[i] = P[i(0, -1)] + Dy*dy*(v(i.xi, i.yi - 1) + 2.5*v(i.xi, i.yi - 2) + 2*v(i.xi, i.yi - 3) + 0.5*v(i.xi, i.yi - 4));
+				P[i] = P[i(0, -1)] + Dy*dy*(2*v(i.xi, i.yi - 1) + 5*v(i.xi, i.yi - 2) + 4*v(i.xi, i.yi - 3) + v(i.xi, i.yi - 4));
 			for(auto &i : Area(Nx, Ny, margin, AreaIndex::ZERO, AreaIndex::NEGATIVE))
-				P[i] = P[i(0,  1)] - Dy*dy*(v(i.xi, i.yi) - 2.5*v(i.xi, i.yi + 1) + 2*v(i.xi, i.yi + 2) - 0.5*v(i.xi, i.yi + 3));
+				P[i] = P[i(0,  1)] - Dy*dy*(2*v(i.xi, i.yi) - 5*v(i.xi, i.yi + 1) + 4*v(i.xi, i.yi + 2) - v(i.xi, i.yi + 3));
 		};
 
-/*	auto boundary_phi = 
+	auto boundary_phi = 
 		[&](auto &Phi)
 		{
 			for(auto &i:Area(Nx, Ny, margin, AreaIndex::POSITIVE, AreaIndex::ZERO))
@@ -129,15 +133,16 @@ int main()
 			for(auto &i:Area(Nx, Ny, margin, AreaIndex::ZERO, AreaIndex::NEGATIVE))
 				Phi[i] = Phi[i(0, 1)];
 		};
-*/
+
 	//initialize
 	boundary_u(u);
 	boundary_v(v);
 	boundary_p(p);
 
-	Initialize(250, -width, width, -width, width, Nx, Ny);
+	Initialize(300, -width, width, -width, width, Nx, Ny);
 
-	g_capture_set("");
+	if(Capture)
+		g_capture_set("");
 
 	while(t < T)
 	{
@@ -198,10 +203,11 @@ int main()
 			NewLine();
 			PrintWord("P Laplace CG param");
 			NewLine();
-			ShowCG(cg_p);
+			ShowCG(cg_phi);
 			NewLine();
 
-			g_capture();
+			if(Capture)
+				g_capture();
 
 			if(Auto)
 				g_sleep(Skip ? 0.001 : 0.16);
@@ -211,8 +217,20 @@ int main()
 
 		if(EffectDiffusion)
 		{
-			cg_u(diffusion_u, u, u, u.core);
-			cg_v(diffusion_v, v, v, v.core);
+			if(ImplicitDiffusion)
+			{
+				cg_u(diffusion_u, u, u, u.core);
+				cg_v(diffusion_v, v, v, v.core);
+			}
+			else
+			{
+				laplace_u(u, utmp);
+				laplace_v(v, vtmp);
+				for(auto &i : u.core)
+					u[i] += dt*utmp[i];
+				for(auto &i : v.core)
+					v[i] += dt*vtmp[i];
+			}
 			boundary_u(u);
 			boundary_v(v);
 		}
@@ -235,12 +253,47 @@ int main()
 				u[i] -= dt*utmp[i];
 			for(auto &i : v.core)
 				v[i] -= dt*vtmp[i];
-			//boundary_u(u);
-			//boundary_v(v);
+			boundary_u(u);
+			boundary_v(v);
 			
 			Divergence(u, v, ptmp, 1/dx, 1/dy);
+			boundary_phi(phi);
+			//cg_p(laplace_p, phi, ptmp, phi.core);
+			cg_phi(laplace_phi, phi, ptmp, phi.core);
+			//cg(diffusion_p, phi, ptmp, phi.core);
+
 			//boundary_phi(phi);
-			cg_p(laplace_p, phi, ptmp, phi.global);
+			Gradient(phi, utmp, vtmp, 1/dx, 1/dy);
+			for(auto &i : u.core)
+				u[i] += utmp[i];
+			for(auto &i : v.core)
+				v[i] += vtmp[i];
+			for(auto &i : p.core)
+				p[i] -= 1/dt*phi[i];
+			boundary_u(u);
+			boundary_v(v);
+			boundary_p(p);
+		}
+
+		if(All_in_One)
+		{
+			Advection(u, v, utmp, vtmp, 1/(2*dx), 1/(2*dy));
+			cg_u(diffusion_u, u, u, u.core);
+			cg_v(diffusion_v, v, v, v.core);
+			for(auto &i : u.core)
+				u[i] -= dt*utmp[i];
+			for(auto &i : v.core)
+				v[i] -= dt*vtmp[i];
+			Gradient(p, utmp, vtmp, 1/dx, 1/dy);
+			for(auto &i : u.core)
+				u[i] -= dt*utmp[i];
+			for(auto &i : v.core)
+				v[i] -= dt*vtmp[i];
+			boundary_u(u);
+			boundary_v(v);
+			Divergence(u, v, ptmp, 1/dx, 1/dy);
+			boundary_phi(phi);
+			cg_phi(laplace_phi, phi, ptmp, phi.core);
 			//cg(diffusion_p, phi, ptmp, phi.core);
 
 			Gradient(phi, utmp, vtmp, 1/dx, 1/dy);

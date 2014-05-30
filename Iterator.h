@@ -152,6 +152,40 @@ namespace NS
 			:Nx(Nx), Ny(Ny), margin(margin){}
 		constexpr Area operator()(AreaIndex axi, AreaIndex ayi){return Area(Nx, Ny, margin, axi, ayi);}
 	};
+
+	struct DomainIterator
+		: Iterator
+	{
+		//x_begin <= xi < x_end
+		//y_begin <= yi < y_end
+		const int x_begin, x_end, y_begin, y_end;
+		constexpr DomainIterator(int xi, int yi, unsigned int Nx, unsigned int Ny, unsigned int margin, int x_begin, int x_end, int y_begin, int y_end)
+			:Iterator(xi, yi, Nx, Ny, margin), x_begin(x_begin), x_end(x_end), y_begin(y_begin), y_end(y_end){}
+		void operator++() const {if(++xi == x_end)xi = x_begin, ++yi;}
+		static constexpr DomainIterator begin(unsigned int Nx, unsigned int Ny, unsigned int margin, int x_begin, int x_end, int y_begin, int y_end)
+		{return DomainIterator(x_begin, y_begin, Nx, Ny, margin, x_begin, x_end, y_begin, y_end);}
+		static constexpr DomainIterator end(unsigned int Nx, unsigned int Ny, unsigned int margin, int x_begin, int x_end, int y_begin, int y_end)
+		{return DomainIterator(x_begin, y_end, Nx, Ny, margin, x_begin, x_end, y_begin, y_end);}
+	};
+
+	struct Domain
+	{
+		const unsigned int Nx, Ny, margin;
+		const int x_begin, x_end, y_begin, y_end;
+
+		constexpr Domain(unsigned int Nx, unsigned int Ny, unsigned int margin, int x_begin, int x_end, int y_begin, int y_end)
+			:Nx(Nx), Ny(Ny), margin(margin), x_begin(x_begin), x_end(x_end), y_begin(y_begin), y_end(y_end){}
+		constexpr DomainIterator begin() const {return DomainIterator::begin(Nx, Ny, margin, x_begin, x_end, y_begin, y_end);}
+		constexpr DomainIterator end() const {return DomainIterator::end(Nx, Ny, margin, x_begin, x_end, y_begin, y_end);}
+	};
+
+	struct DomainFactory
+	{
+		const unsigned int Nx, Ny, margin;
+		constexpr DomainFactory(unsigned int Nx, unsigned int Ny, unsigned int margin)
+			:Nx(Nx), Ny(Ny), margin(margin){}
+		Domain operator()(int x_begin, int x_end, int y_begin, int y_end)const{assert(x_begin < x_end); assert(y_begin < y_end); return Domain(Nx, Ny, margin, x_begin, x_end, y_begin, y_end);}
+	};
 }
 
 #endif

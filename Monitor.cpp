@@ -171,7 +171,7 @@ namespace NS
 			PrintWord("total");
 			PrintWord(": %d", cg.n);
 			NewLine();
-			PrintWord("valid");
+			PrintWord("state");
 			PrintWord(": %s", cg ? "success" : "fail");
 		}
 
