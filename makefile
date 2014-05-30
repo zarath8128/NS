@@ -1,4 +1,4 @@
-override OPT_FLAGS+=-march=native
+override OPT_FLAGS+=-march=native -mtune=native
 override FLAGS += -Wall -Wextra ${OPT_FLAGS}
 override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y

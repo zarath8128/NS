@@ -137,7 +137,7 @@ int main()
 
 	Initialize(250, -width, width, -width, width, Nx, Ny);
 
-	g_capture_set("");
+//	g_capture_set("");
 
 	while(t < T)
 	{
@@ -201,7 +201,7 @@ int main()
 			ShowCG(cg_p);
 			NewLine();
 
-			g_capture();
+	//		g_capture();
 
 			if(Auto)
 				g_sleep(Skip ? 0.001 : 0.16);
