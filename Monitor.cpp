@@ -49,16 +49,23 @@ namespace NS
 
 			if(val < center)
 			{
-				b = 1 - (val - min)/(center - min);
+				/*b = 1 - (val - min)/(center - min);
 				g = (val - min)/(center - min);
+				r = 0;
+				*/
+				b = cos((val - min)*0.5*M_PI/(center - min));
 				r = 0;
 			}
 			else if(val < max)
 			{
-				b = 0;
+				/*b = 0;
 				g = 1 - (val - center)/(max - center);
 				r = (val - center)/(max - center);
+				*/
+				b = 0;
+				r = cos(0.5*M_PI*(val - max)/(max - center));
 			}
+				g = cos(M_PI*(val - center)/(max - min));
 
 /*			b = exp(-a*sq((val - min)));
 			g = exp(-a*sq((val - center)));
@@ -171,7 +178,7 @@ namespace NS
 			PrintWord("total");
 			PrintWord(": %d", cg.n);
 			NewLine();
-			PrintWord("valid");
+			PrintWord("state");
 			PrintWord(": %s", cg ? "success" : "fail");
 		}
 

@@ -15,11 +15,12 @@ namespace NS
 		const Core core;
 		const Boundary boundary;
 		const AreaFactory area;
+		const DomainFactory domain;
 
 		template<class INIT>
 		Grid(unsigned int Nx, unsigned int Ny, unsigned int margin, const INIT &init)
 			:Vector((Nx + 2*margin)*(Ny + 2*margin)), NX(Nx + 2*margin), NY(Ny + 2*margin), Nx(Nx), Ny(Ny), margin(margin), 
-			global(Nx, Ny, margin), core(Nx, Ny, margin), boundary(Nx, Ny, margin), area(Nx, Ny, margin), n(0, 0, Nx, Ny, margin)
+			global(Nx, Ny, margin), core(Nx, Ny, margin), boundary(Nx, Ny, margin), area(Nx, Ny, margin), domain(Nx, Ny, margin), n(0, 0, Nx, Ny, margin)
 		{
 			for(auto &i:global)
 				init(*this, i);

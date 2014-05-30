@@ -4,7 +4,7 @@ override CFLAGS+=${FLAGS}
 override CXXFLAGS+=${FLAGS} -std=c++1y
 
 LDLIBS=-lglsc -lX11
-ALL=test cg_test
+ALL=test 
 
 .PHONY:all clean syntax debug release profile optimize full reset
 
